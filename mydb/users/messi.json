@@ -1,0 +1,12 @@
+{
+	"name": "messi",
+	"age": 37,
+	"contact": "9090",
+	"club": "inter miami",
+	"address": {
+		"city": "rosario",
+		"state": "santa fe",
+		"country": "argentina",
+		"pincode": 678594
+	}
+}

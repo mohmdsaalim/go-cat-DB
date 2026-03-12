@@ -1,0 +1,12 @@
+{
+	"name": "lamine yamal",
+	"age": 17,
+	"contact": "9090",
+	"club": "barcelona",
+	"address": {
+		"city": "esplugues",
+		"state": "catalonia",
+		"country": "spain",
+		"pincode": 673294
+	}
+}

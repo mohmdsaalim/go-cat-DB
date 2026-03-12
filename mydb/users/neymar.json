@@ -1,0 +1,12 @@
+{
+	"name": "neymar",
+	"age": 32,
+	"contact": "9090",
+	"club": "santos",
+	"address": {
+		"city": "mogi das cruzes",
+		"state": "são paulo",
+		"country": "brazil",
+		"pincode": 6782194
+	}
+}

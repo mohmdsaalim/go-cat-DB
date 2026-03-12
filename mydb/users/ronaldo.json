@@ -1,0 +1,12 @@
+{
+	"name": "ronaldo",
+	"age": 39,
+	"contact": "9090",
+	"club": "al nassr",
+	"address": {
+		"city": "funchal",
+		"state": "madeira",
+		"country": "portugal",
+		"pincode": 123345
+	}
+}
