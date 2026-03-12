@@ -275,7 +275,7 @@ func main() {
 			fmt.Println("Error writing", value.Name, ":", err)
 		}
 	}
-	fmt.Println("✅ All users written successfully!")
+	fmt.Println(" All users written successfully!")
 
 	// ── 2. Read all records ──────────────────────────────────
 	records, err := db.ReadAll("users")
@@ -293,14 +293,14 @@ func main() {
 		allUsers = append(allUsers, employeeFound)
 	}
 
-	fmt.Println("\n📋 All Users:")
+	fmt.Println("\n All Users:")
 	for _, u := range allUsers {
 		fmt.Printf("   • %s | Age: %s | Club: %s | City: %s, %s\n",
 			u.Name, u.Age, u.Club, u.Address.City, u.Address.Country)
 	}
 
 	// ── 3. Read a single record ──────────────────────────────
-	fmt.Println("\n🔍 Reading single user 'messi':")
+	fmt.Println("\n Reading single user 'messi':")
 	var messi User
 	if err := db.Read("users", "messi", &messi); err != nil {
 		fmt.Println("Error reading messi:", err)
@@ -309,9 +309,9 @@ func main() {
 	}
 
 	// ── 4. Delete a single record ────────────────────────────
-	
+
 	// ── 5. Verify deletion ───────────────────────────────────
-	fmt.Println("\n📋 Users after deletion:")
+	fmt.Println("\n Users after deletion:")
 	records, err = db.ReadAll("users")
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -322,21 +322,20 @@ func main() {
 		json.Unmarshal([]byte(f), &u)
 		fmt.Printf("   • %s\n", u.Name)
 	}
-	
-	// fmt.Println("\n🗑️  Deleting user 'ronaldo'...")
+
+	// fmt.Println("\n  Deleting user 'ronaldo'...")
 	// if err := db.Delete("users", "ronaldo"); err != nil {
 	// 	fmt.Println("Error deleting:", err)
 	// } else {
 	// 	fmt.Println("   Deleted successfully!")
 	// }
 	// ── 6. Delete the entire collection ──────────────────────
-	// fmt.Println("\n🗑️  Deleting entire 'users' collection...")
+	// fmt.Println("\n  Deleting entire 'users' collection...")
 	// if err := db.Delete("users", ""); err != nil {
-		// 	fmt.Println("Error:", err)
-		// } else {
-			// 	fmt.Println("   Entire collection deleted!")
-			// }
-			
-			// fmt.Println("\n🎉 go-cat-DB demo complete!")
-		}
-		
+	// 	fmt.Println("Error:", err)
+	// } else {
+	// 	fmt.Println("   Entire collection deleted!")
+	// }
+
+	// fmt.Println("\n go-cat-DB demo complete!")
+}
