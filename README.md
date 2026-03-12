@@ -36,7 +36,7 @@ A lightweight, file-based JSON database engine built from scratch in Go. No exte
 
 ## Overview
 
-go-cat-DB is a mini database engine that stores structured data as JSON files on disk. It is inspired by how NoSQL databases like MongoDB organize data into collections and documents, but uses the local filesystem as the storage backend.
+cat-DB is a mini database engine that stores structured data as JSON files on disk. It is inspired by how NoSQL databases like MongoDB organize data into collections and documents, but uses the local filesystem as the storage backend.
 
 The project demonstrates core database concepts including:
 
