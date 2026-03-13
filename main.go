@@ -221,9 +221,7 @@ func (d *Driver) getOrCreateMutex(collection string) *sync.Mutex {
 	return m
 }
 
-// ──────────────────────────────────────────────────────────────
 //  Data Models
-// ──────────────────────────────────────────────────────────────
 
 // Address represents a user's address.
 type Address struct {
@@ -242,9 +240,7 @@ type User struct {
 	Address Address     `json:"address"`
 }
 
-// ──────────────────────────────────────────────────────────────
 //  Main — demo usage
-// ──────────────────────────────────────────────────────────────
 
 func main() {
 
@@ -323,13 +319,17 @@ func main() {
 		fmt.Printf("   • %s\n", u.Name)
 	}
 
-	// fmt.Println("\n  Deleting user 'ronaldo'...")
-	// if err := db.Delete("users", "ronaldo"); err != nil {
-	// 	fmt.Println("Error deleting:", err)
-	// } else {
-	// 	fmt.Println("   Deleted successfully!")
-	// }
+	fmt.Println("\n  Deleting user 'ronaldo'...")
+	if err := db.Delete("users", "ronaldo"); err != nil {
+		fmt.Println("Error deleting:", err)
+	} else {
+		fmt.Println("Deleted successfully!")
+	}
+
+
 	// ── 6. Delete the entire collection ──────────────────────
+
+
 	// fmt.Println("\n  Deleting entire 'users' collection...")
 	// if err := db.Delete("users", ""); err != nil {
 	// 	fmt.Println("Error:", err)
@@ -337,5 +337,5 @@ func main() {
 	// 	fmt.Println("   Entire collection deleted!")
 	// }
 
-	// fmt.Println("\n go-cat-DB demo complete!")
+	// fmt.Println("\n cat-DB demo complete!")
 }
