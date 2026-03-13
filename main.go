@@ -319,7 +319,7 @@ func main() {
 		fmt.Printf("   • %s\n", u.Name)
 	}
 
-	fmt.Println("\n  Deleting user 'ronaldo'...")
+	fmt.Println("\n  Deleting user 'ronaldo'...") //      deleting is working
 	if err := db.Delete("users", "ronaldo"); err != nil {
 		fmt.Println("Error deleting:", err)
 	} else {
