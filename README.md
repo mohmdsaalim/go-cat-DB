@@ -21,6 +21,7 @@ A lightweight, file-based JSON database engine built from scratch in Go. No exte
   - [Read — Read a Single Record](#read--read-a-single-record)
   - [ReadAll — Read All Records in a Collection](#readall--read-all-records-in-a-collection)
   - [Delete — Delete a Record or Collection](#delete--delete-a-record-or-collection)
+  - [Update — Partial Update a Record](#update--partial-update-a-record)
 - [Internal Architecture](#internal-architecture)
   - [Atomic Writes](#atomic-writes)
   - [Per-Collection Mutex Locking](#per-collection-mutex-locking)
@@ -143,7 +144,8 @@ When you run the project, it will:
 2. Write 4 user records into the `users` collection
 3. Read all records and display them
 4. Read a single record (`messi`) and display it
-5. Show the full list of users
+5. Update `messi`'s club and contact (partial update)
+6. Show the full list of users
 
 You should see output like:
 
@@ -372,6 +374,59 @@ err := db.Delete("users", "")
 
 ---
 
+### Update — Partial Update a Record
+
+```go
+func (d *Driver) Update(collection, resource string, updates interface{}) error
+```
+
+Updates an existing record by merging the provided fields on top of the current data. Only the fields you provide are changed; all other fields remain untouched. Uses atomic writes (temp file → rename) to ensure data integrity.
+
+**Parameters:**
+- `collection` — The collection name (e.g., `"users"`)
+- `resource` — The record name/key to update (e.g., `"messi"`)
+- `updates` — Any Go value (struct, map, etc.) whose JSON fields will be merged on top of the existing record
+
+**Returns:**
+- An error if the record does not exist or the update fails, `nil` on success
+
+**Example — Update specific fields:**
+
+```go
+// Only update club and contact — all other fields (name, age, address) stay the same
+err := db.Update("users", "messi", map[string]interface{}{
+    "club":    "argentina national team",
+    "contact": "1010",
+})
+```
+
+**Example — Update using a struct:**
+
+```go
+// You can also pass a struct — all non-zero fields will overwrite existing ones
+err := db.Update("users", "messi", User{
+    Club: "argentina national team",
+})
+```
+
+**What happens internally:**
+1. Validates that both `collection` and `resource` are provided
+2. Acquires the mutex lock for this collection (thread safety)
+3. Checks that the record exists on disk
+4. Reads the existing JSON file into a `map[string]interface{}`
+5. Marshals the `updates` parameter to JSON, then unmarshals it into a second map
+6. Merges the update map into the existing map (update fields overwrite existing ones)
+7. Marshals the merged result to pretty-printed JSON
+8. Writes the merged JSON to a temporary `.tmp` file
+9. Atomically renames the `.tmp` file to the final `.json` file (same atomic pattern as `Write`)
+10. Releases the mutex lock
+
+**Why not just use `Write`?**
+
+`Write` replaces the entire record. If you only want to change one field but pass a struct with zero values, `Write` would overwrite the other fields with empty/zero values. `Update` only touches the fields you provide, leaving everything else intact.
+
+---
+
 ## Internal Architecture
 
 ### Atomic Writes
@@ -508,13 +563,23 @@ Here is the full lifecycle of data in go-cat-DB:
    └── Reads each .json file
    └── Returns all records as raw JSON strings
 
-5. Delete Record
+5. Update
+   db.Update("users", "messi", updates)
+   └── Acquires mutex for "users" collection
+   └── Reads existing "mydb/users/messi.json" into a map
+   └── Merges update fields on top of existing map
+   └── Marshals merged result to JSON
+   └── Writes to "mydb/users/messi.json.tmp"
+   └── Renames to "mydb/users/messi.json" (atomic)
+   └── Releases mutex
+
+6. Delete Record
    db.Delete("users", "messi")
    └── Acquires mutex for "users" collection
    └── Removes "mydb/users/messi.json"
    └── Releases mutex
 
-6. Delete Collection
+7. Delete Collection
    db.Delete("users", "")
    └── Acquires mutex for "users" collection
    └── Removes entire "mydb/users/" directory

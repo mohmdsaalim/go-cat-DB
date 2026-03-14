@@ -15,7 +15,7 @@ const Version = "1.0.0"
 // Driver is the core struct that acts as the database engine.
 // It stores JSON files organized by collection/resource inside a directory.
 type Driver struct {
-	mutex   sync.Mutex // global mutex to protect the map 
+	mutex   sync.Mutex             // global mutex to protect the map
 	mutexes map[string]*sync.Mutex // percollection mutexes
 	dir     string
 	log     *zap.Logger
@@ -107,6 +107,77 @@ func (d *Driver) Write(collection, resource string, v interface{}) error {
 	b = append(b, byte('\n'))
 	if err := os.WriteFile(tmpPath, b, 0644); err != nil {
 		return err
+	}
+
+	return os.Rename(tmpPath, fnlPath)
+}
+
+// Update modifies an existing resource in a collection.
+// It reads the current record, merges the provided updates on top (partial update),
+// and writes the result back atomically using temp file → rename.
+//
+//	collection = folder name (e.g. "users")
+//	resource   = file name / key (e.g. "messi")
+//	updates    = any Go value whose JSON fields will be merged on top of the existing record
+func (d *Driver) Update(collection, resource string, updates interface{}) error {
+
+	if collection == "" {
+		return fmt.Errorf("missing collection - unable to update")
+	}
+	if resource == "" {
+		return fmt.Errorf("missing resource - unable to update record (no name)")
+	}
+
+	mutex := d.getOrCreateMutex(collection)
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	dir := filepath.Join(d.dir, collection)
+	fnlPath := filepath.Join(dir, resource+".json")
+	tmpPath := fnlPath + ".tmp"
+
+	// ── Step 1: Read the existing record ─────────────────────
+	if _, err := os.Stat(fnlPath); err != nil {
+		return fmt.Errorf("record %s/%s does not exist - cannot update", collection, resource)
+	}
+
+	existingBytes, err := os.ReadFile(fnlPath)
+	if err != nil {
+		return fmt.Errorf("failed to read existing record: %w", err)
+	}
+
+	// ── Step 2: Unmarshal existing record into a generic map ─
+	var existingMap map[string]interface{}
+	if err := json.Unmarshal(existingBytes, &existingMap); err != nil {
+		return fmt.Errorf("failed to parse existing record: %w", err)
+	}
+
+	// ── Step 3: Marshal the updates and unmarshal into a map ─
+	updateBytes, err := json.Marshal(updates)
+	if err != nil {
+		return fmt.Errorf("failed to marshal updates: %w", err)
+	}
+
+	var updateMap map[string]interface{}
+	if err := json.Unmarshal(updateBytes, &updateMap); err != nil {
+		return fmt.Errorf("failed to parse updates: %w", err)
+	}
+
+	// ── Step 4: Merge — update fields overwrite existing ones ─
+	for key, value := range updateMap {
+		existingMap[key] = value
+	}
+
+	// ── Step 5: Marshal the merged result to pretty JSON ─────
+	mergedBytes, err := json.MarshalIndent(existingMap, "", "\t")
+	if err != nil {
+		return fmt.Errorf("failed to marshal merged record: %w", err)
+	}
+
+	// ── Step 6: Atomic write — temp file → rename ────────────
+	mergedBytes = append(mergedBytes, byte('\n'))
+	if err := os.WriteFile(tmpPath, mergedBytes, 0644); err != nil {
+		return fmt.Errorf("failed to write temp file: %w", err)
 	}
 
 	return os.Rename(tmpPath, fnlPath)
@@ -304,9 +375,29 @@ func main() {
 		fmt.Printf("   Name: %s, Club: %s, Contact: %s\n", messi.Name, messi.Club, messi.Contact)
 	}
 
-	// ── 4. Delete a single record ────────────────────────────
+	// ── 4. Update a record (partial update) ─────────────────
+	fmt.Println("\n Updating messi's club to 'argentina national team'...")
+	if err := db.Update("users", "messi", map[string]interface{}{
+		"club":    "argentina national team",
+		"contact": "10000",
+	}); err != nil {
+		fmt.Println("Error updating:", err)
+	} else {
+		fmt.Println("Updated successfully!")
+	}
 
-	// ── 5. Verify deletion ───────────────────────────────────
+	// Verify the update
+	fmt.Println("\n Reading updated 'messi':")
+	var updatedMessi User
+	if err := db.Read("users", "messi", &updatedMessi); err != nil {
+		fmt.Println("Error reading:", err)
+	} else {
+		fmt.Printf("   Name: %s, Club: %s, Contact: %s\n", updatedMessi.Name, updatedMessi.Club, updatedMessi.Contact)
+	}
+
+	// ── 5. Delete a single record ────────────────────────────
+
+	// ── 6. Verify deletion ───────────────────────────────────
 	fmt.Println("\n Users after deletion:")
 	records, err = db.ReadAll("users")
 	if err != nil {
@@ -319,16 +410,14 @@ func main() {
 		fmt.Printf("   • %s\n", u.Name)
 	}
 
-	fmt.Println("\n  Deleting user 'ronaldo'...") //      deleting is working
-	if err := db.Delete("users", "ronaldo"); err != nil {
-		fmt.Println("Error deleting:", err)
-	} else {
-		fmt.Println("Deleted successfully!")
-	}
+	// fmt.Println("\n  Deleting user 'ronaldo'...") //      deleting is working
+	// if err := db.Delete("users", "ronaldo"); err != nil {
+	// 	fmt.Println("Error deleting:", err)
+	// } else {
+	// 	fmt.Println("Deleted successfully!")
+	// }
 
-
-	// ── 6. Delete the entire collection ──────────────────────
-
+	// ── 7. Delete the entire collection ──────────────────────
 
 	// fmt.Println("\n  Deleting entire 'users' collection...")
 	// if err := db.Delete("users", ""); err != nil {
@@ -344,25 +433,11 @@ func main() {
 
 // 1. mutex and per - collection mutexes
 // 2. Atomic writes -> no mid-write situation -> updated/previus -> app crash/server crash -> noproblem -> This is a professional technique used in production systems
-// redis, mongo, sqllite even git are using this techniques git commit -> atomic write 
-// 3. conconrency saftty -> write(users) -> getorcreatemutex() -> mutex lock -> write/read -> mutex unlock -> ← (via defer) releases the lock 
+//    redis, mongo, sqllite even git are using this techniques git commit -> atomic write
+// 3. conconrency safety -> write(users) -> getorcreatemutex() -> mutex lock -> write/read -> mutex unlock -> ← (via defer) releases the lock
+// 4.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// next 5. 🧾 Idempotency Key Store
+// next 5. Idempotency Key Store
 // It's tiny (2 services, ~200 lines total)
 // Every payment company uses it
 // Most devs have heard of it but never built it
