@@ -429,6 +429,12 @@ func main() {
 	// fmt.Println("\n cat-DB demo complete!")
 }
 
+
+
+
+
+
+
 // imporant concepts in this projetcs
 
 // 1. mutex and per - collection mutexes
@@ -436,6 +442,27 @@ func main() {
 //    redis, mongo, sqllite even git are using this techniques git commit -> atomic write
 // 3. conconrency safety -> write(users) -> getorcreatemutex() -> mutex lock -> write/read -> mutex unlock -> ← (via defer) releases the lock
 // 4.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // next 5. Idempotency Key Store
 // It's tiny (2 services, ~200 lines total)
