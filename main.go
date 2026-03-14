@@ -441,9 +441,14 @@ func main() {
 // 2. Atomic writes -> no mid-write situation -> updated/previus -> app crash/server crash -> noproblem -> This is a professional technique used in production systems
 //    redis, mongo, sqllite even git are using this techniques git commit -> atomic write
 // 3. conconrency safety -> write(users) -> getorcreatemutex() -> mutex lock -> write/read -> mutex unlock -> ← (via defer) releases the lock
-// 4.
 
+// 4.In this project, I used hash maps (Go maps) as a core data structure to efficiently manage resources. A hash map is used to store per-collection mutexes, 
+// where the collection name acts as the key and the corresponding mutex is the value. 
+// This allows the system to quickly retrieve the correct mutex for a specific collection in O(1) time complexity,
+//  enabling safe concurrent access by multiple goroutines.
 
+// Using a hash map improves performance because it avoids scanning through collections and allows direct lookup. 
+// This design helps the database handle concurrent operations efficiently while maintaining thread safety.
 
 
 
