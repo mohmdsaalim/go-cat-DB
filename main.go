@@ -15,8 +15,8 @@ const Version = "1.0.0"
 // Driver is the core struct that acts as the database engine.
 // It stores JSON files organized by collection/resource inside a directory.
 type Driver struct {
-	mutex   sync.Mutex
-	mutexes map[string]*sync.Mutex
+	mutex   sync.Mutex // global mutex to protect the map 
+	mutexes map[string]*sync.Mutex // percollection mutexes
 	dir     string
 	log     *zap.Logger
 }
@@ -339,3 +339,32 @@ func main() {
 
 	// fmt.Println("\n cat-DB demo complete!")
 }
+
+// imporant concepts in this projetcs
+
+// 1. mutex and per - collection mutexes
+// 2. Atomic writes -> no mid-write situation -> updated/previus -> app crash/server crash -> noproblem -> This is a professional technique used in production systems
+// redis, mongo, sqllite even git are using this techniques git commit -> atomic write 
+// 3. conconrency saftty -> write(users) -> getorcreatemutex() -> mutex lock -> write/read -> mutex unlock -> ← (via defer) releases the lock 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// next 5. 🧾 Idempotency Key Store
+// It's tiny (2 services, ~200 lines total)
+// Every payment company uses it
+// Most devs have heard of it but never built it
+// When interviewer asks "how do you handle duplicate requests?" — you have a built answer not a theoretical one
+// The DSA (heap for TTL expiry) is clean and explainable in 2 minutes
